@@ -69,9 +69,11 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        res.status(500).json({
-            error: "Verarbeitung fehlgeschlagen",
-            details: error.message
-        });
-    }
+    console.error("❌ API ERROR:", error);
+
+    res.status(500).json({
+        error: "Verarbeitung fehlgeschlagen",
+        details: error.message || String(error)
+    });
+}
 }
