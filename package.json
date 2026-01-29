@@ -1,0 +1,10 @@
+{
+  "name": "article-summarizer",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "jsdom": "^24.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}
