@@ -54,63 +54,32 @@ export default async function handler(req, res) {
 
         const text = article.textContent.slice(0, 3000);
 
-        /* 4️⃣ Zusammenfassung (Hugging Face - KORRIGIERT) */
+        /* 4️⃣ Zusammenfassung (KORRIGIERTE URL) */
         const hfResponse = await fetch(
-    "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn",
-    {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${process.env.HF_TOKEN}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            inputs: text,
-            parameters: {
-                max_length: 150,
-                min_length: 40,
-                do_sample: false
+            "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn",
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    inputs: text
+                }),
+                timeout: 30000
             }
-        }),
-        timeout: 30000
-    }
-);
+        );
 
         const hfData = await hfResponse.json();
+        console.log("HF Response:", hfData);
 
-        // Handle Hugging Face errors
+        // Handle Hugging Face response
         if (!hfResponse.ok) {
-            console.error("HF Error:", hfData);
+            console.error("HF Error Status:", hfResponse.status);
             
-            // Fallback 1: Try different model
-            try {
-                const fallbackResponse = await fetch(
-    "https://router.huggingface.co/hf-inference/models/sshleifer/distilbart-cnn-12-6",
-    {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${process.env.HF_TOKEN}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ inputs: text }),
-        timeout: 20000
-    }
-);
-                
-                if (fallbackResponse.ok) {
-                    const fallbackData = await fallbackResponse.json();
-                    if (Array.isArray(fallbackData) && fallbackData[0]?.summary_text) {
-                        var summary = fallbackData[0].summary_text;
-                    }
-                }
-            } catch (fallbackError) {
-                console.error("Fallback also failed:", fallbackError);
-            }
-            
-            // Fallback 2: Simple text truncation
-            if (!summary) {
-                const sentences = text.split(/[.!?]+/);
-                summary = sentences.slice(0, 3).join('. ') + '.';
-            }
+            // Simple fallback
+            const sentences = text.split(/[.!?]+/);
+            var summary = sentences.slice(0, 3).join('. ') + '.';
         } else if (Array.isArray(hfData) && hfData[0]?.summary_text) {
             var summary = hfData[0].summary_text;
         } else if (hfData.summary_text) {
@@ -118,12 +87,12 @@ export default async function handler(req, res) {
         } else if (hfData[0]?.generated_text) {
             var summary = hfData[0].generated_text;
         } else {
-            return res.status(500).json({
-                error: "Ungültige Antwort von Summarization API"
-            });
+            // If we get here, use fallback
+            const sentences = text.split(/[.!?]+/);
+            var summary = sentences.slice(0, 3).join('. ') + '.';
         }
 
-        /* 5️⃣ Übersetzung mit FALLBACKS */
+        /* 5️⃣ Übersetzung */
         let translatedText;
         
         // TRY 1: LibreTranslate
@@ -153,10 +122,10 @@ export default async function handler(req, res) {
                 }
             }
         } catch (error) {
-            console.log("LibreTranslate failed, trying fallback...");
+            console.log("LibreTranslate failed");
         }
 
-        // TRY 2: MyMemory Translator (Fallback)
+        // TRY 2: MyMemory Translator Fallback
         if (!translatedText) {
             try {
                 const fallbackResponse = await fetch(
@@ -175,7 +144,7 @@ export default async function handler(req, res) {
             }
         }
 
-        // TRY 3: If all translation fails, return English summary
+        // TRY 3: Return English if all fails
         if (!translatedText) {
             translatedText = summary;
         }
@@ -189,18 +158,8 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("❌ API ERROR:", error);
-        
-        // User-friendly error messages
-        let errorMessage = "Interner Serverfehler";
-        if (error.message.includes("fetch failed") || error.message.includes("network")) {
-            errorMessage = "Netzwerkfehler. Bitte Internetverbindung prüfen.";
-        } else if (error.message.includes("timeout")) {
-            errorMessage = "Zeitüberschreitung. Bitte kürzeren Artikel versuchen.";
-        }
-        
         res.status(500).json({
-            error: errorMessage,
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: "Interner Serverfehler"
         });
     }
 }
