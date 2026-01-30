@@ -41,7 +41,7 @@ const { url, language } = body;
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    inputs: article.textContent.slice(0, 4000)
+                    inputs: article.textContent.slice(0, 2500)
                 })
             }
         );
