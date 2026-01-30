@@ -1,8 +1,0 @@
-{
-  "functions": {
-    "api/summarize.js": {
-      "memory": 2048,
-      "maxDuration": 30
-    }
-  }
-}
