@@ -56,7 +56,7 @@ export default async function handler(req, res) {
 
         /* 4️⃣ Zusammenfassung (KORRIGIERTE URL) */
         const hfResponse = await fetch(
-            "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn",
+            "https://router.huggingface.co/models/facebook/bart-large-cnn",
             {
                 method: "POST",
                 headers: {
@@ -71,11 +71,10 @@ export default async function handler(req, res) {
         );
 
         const hfData = await hfResponse.json();
-        console.log("HF Response:", hfData);
 
         // Handle Hugging Face response
         if (!hfResponse.ok) {
-            console.error("HF Error Status:", hfResponse.status);
+            console.error("HF Error:", hfData);
             
             // Simple fallback
             const sentences = text.split(/[.!?]+/);
