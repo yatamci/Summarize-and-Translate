@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api/summarize.js": {
+      "memory": 3008,
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    }
+  ]
+}
