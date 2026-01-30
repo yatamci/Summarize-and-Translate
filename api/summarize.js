@@ -56,24 +56,24 @@ export default async function handler(req, res) {
 
         /* 4️⃣ Zusammenfassung (Hugging Face - KORRIGIERT) */
         const hfResponse = await fetch(
-            "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-            {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${process.env.HF_TOKEN}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    inputs: text,
-                    parameters: {
-                        max_length: 150,
-                        min_length: 40,
-                        do_sample: false
-                    }
-                }),
-                timeout: 30000
+    "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn",
+    {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${process.env.HF_TOKEN}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            inputs: text,
+            parameters: {
+                max_length: 150,
+                min_length: 40,
+                do_sample: false
             }
-        );
+        }),
+        timeout: 30000
+    }
+);
 
         const hfData = await hfResponse.json();
 
