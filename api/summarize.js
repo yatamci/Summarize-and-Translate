@@ -84,17 +84,17 @@ export default async function handler(req, res) {
             // Fallback 1: Try different model
             try {
                 const fallbackResponse = await fetch(
-                    "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${process.env.HF_TOKEN}`,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ inputs: text }),
-                        timeout: 20000
-                    }
-                );
+    "https://router.huggingface.co/hf-inference/models/sshleifer/distilbart-cnn-12-6",
+    {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${process.env.HF_TOKEN}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ inputs: text }),
+        timeout: 20000
+    }
+);
                 
                 if (fallbackResponse.ok) {
                     const fallbackData = await fallbackResponse.json();
