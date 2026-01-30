@@ -2,44 +2,60 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artikel zusammenfassen & übersetzen - Kostenlos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Artikel-Zusammenfassung - Kostenlos</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 600px;
             width: 100%;
             background: #ffffff;
-            padding: 40px;
-            border-radius: 16px;
+            padding: 25px;
+            border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
             color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
+            margin-bottom: 5px;
+            font-size: 24px;
+            line-height: 1.3;
         }
 
         .subtitle {
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         label {
@@ -47,129 +63,82 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 8px;
-            margin-top: 20px;
+            margin-top: 18px;
+            font-size: 14px;
         }
 
         input, select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 15px;
+            border-radius: 12px;
+            font-size: 16px;
             transition: all 0.3s;
             background: #fff;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
         }
 
         input:focus, select:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
         }
 
         button {
             width: 100%;
-            padding: 14px;
-            margin-top: 25px;
+            padding: 16px;
+            margin-top: 22px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        button:active {
+            transform: scale(0.98);
         }
 
         button:disabled {
-            opacity: 0.6;
+            opacity: 0.7;
             cursor: not-allowed;
-        }
-
-        .result-container {
-            margin-top: 30px;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
-            display: none;
-        }
-
-        .result-container.show {
-            display: block;
-            animation: slideIn 0.4s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .result-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .result-title::before {
-            content: "📄";
-            font-size: 20px;
-        }
-
-        .result-summary {
-            color: #444;
-            line-height: 1.8;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .result-meta {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e1e8ed;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .error {
-            background: #fee;
-            border-left-color: #e74c3c;
-        }
-
-        .error .result-title::before {
-            content: "❌";
+            transform: none !important;
         }
 
         .progress-container {
             margin-top: 20px;
             display: none;
+            animation: fadeIn 0.3s;
         }
 
         .progress-container.show {
             display: block;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .progress-bar {
             width: 100%;
-            height: 8px;
+            height: 6px;
             background: #e1e8ed;
             border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .progress-fill {
@@ -184,42 +153,183 @@
             text-align: center;
             color: #667eea;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
+        }
+
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px;
+            border-left: 4px solid #667eea;
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .result-title::before {
+            content: "📄";
+            font-size: 22px;
+        }
+
+        .result-summary {
+            color: #444;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 15px;
+        }
+
+        .result-meta {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid rgba(255,255,255,0.6);
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            border-left-color: #e74c3c;
+        }
+
+        .error .result-title::before {
+            content: "❌";
         }
 
         .info-box {
-            background: #e8f4f8;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4ebf2 100%);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
             color: #0066cc;
-            border: 1px solid #b3d9e8;
+            border: 2px solid #b3d9e8;
+            line-height: 1.5;
         }
 
         .info-box strong {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+            font-size: 14px;
         }
 
-        .badge {
-            display: inline-block;
-            background: #4CAF50;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
+        /* Mobile Optimierungen */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
 
-        @media (max-width: 600px) {
             .container {
-                padding: 25px;
+                padding: 20px;
+                border-radius: 16px;
             }
             
             h1 {
-                font-size: 24px;
+                font-size: 22px;
+            }
+
+            .subtitle {
+                font-size: 12px;
+            }
+
+            .badge {
+                display: block;
+                margin: 8px 0 0 0;
+                width: fit-content;
+                font-size: 10px;
+            }
+
+            input, select {
+                padding: 12px 14px;
+                font-size: 16px; /* Verhindert Zoom auf iOS */
+            }
+
+            button {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            .result-title {
+                font-size: 16px;
+            }
+
+            .result-summary {
+                font-size: 14px;
+            }
+        }
+
+        /* Landscape Tablet */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .container {
+                max-width: 700px;
+                padding: 35px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .container {
+                background: #0f3460;
+                color: #e0e0e0;
+            }
+
+            h1, label, .result-title {
+                color: #ffffff;
+            }
+
+            .subtitle, .result-meta {
+                color: #b0b0b0;
+            }
+
+            input, select {
+                background: #1a1a2e;
+                border-color: #2a2a4e;
+                color: #ffffff;
+            }
+
+            .result-summary {
+                color: #e0e0e0;
+            }
+
+            .info-box {
+                background: rgba(102, 126, 234, 0.2);
+                border-color: rgba(102, 126, 234, 0.4);
+                color: #9db4ff;
             }
         }
     </style>
@@ -228,24 +338,22 @@
 
 <div class="container">
     <h1>
-        Artikel Zusammenfassung & Übersetzung
-        <span class="badge">100% KOSTENLOS</span>
+        📰 Artikel-Zusammenfassung
+        <span class="badge">100% Kostenlos</span>
     </h1>
-    <p class="subtitle">Keine API Keys nötig - Powered by Hugging Face & LibreTranslate</p>
+    <p class="subtitle">KI-gestützte Zusammenfassungen in deiner Sprache - Powered by Hugging Face</p>
 
     <div class="info-box">
-        <strong>💡 So funktioniert's:</strong>
-        Gib einfach die URL eines Artikels ein und wähle deine gewünschte Sprache. 
-        Das Tool extrahiert den kompletten Artikel, erstellt eine KI-Zusammenfassung und 
-        übersetzt sie in deine Sprache - alles komplett kostenlos!
+        <strong>💡 Hinweis:</strong>
+        Beim ersten Mal kann es 30-60 Sekunden dauern (KI-Modelle müssen laden). Nachfolgende Anfragen sind schneller!
     </div>
 
-    <label for="urlInput">🔗 Link zur Webseite</label>
+    <label for="urlInput">🔗 Artikel-URL</label>
     <input 
         type="url" 
         id="urlInput" 
-        placeholder="https://de.wikipedia.org/wiki/Künstliche_Intelligenz" 
-        required
+        placeholder="https://de.wikipedia.org/wiki/..." 
+        autocomplete="off"
     >
 
     <label for="languageSelect">🌍 Zielsprache</label>
@@ -307,11 +415,10 @@ async function processArticle() {
         return;
     }
 
-    // URL Format überprüfen
     try {
         new URL(url);
     } catch (e) {
-        showError("Die eingegebene URL ist nicht gültig. Bitte überprüfe das Format.");
+        showError("Die URL ist nicht gültig. Bitte überprüfe das Format.");
         return;
     }
 
@@ -322,27 +429,26 @@ async function processArticle() {
     processBtn.disabled = true;
     processBtn.textContent = "⏳ Verarbeite...";
 
-    // Simuliere Fortschritt (da die API keine echten Updates sendet)
+    // Fortschritt simulieren
     let currentProgress = 0;
     updateProgress(0, "Lade Webseite...");
     
     progressInterval = setInterval(() => {
-        if (currentProgress < 90) {
-            currentProgress += Math.random() * 15;
-            if (currentProgress > 90) currentProgress = 90;
+        if (currentProgress < 85) {
+            currentProgress += Math.random() * 10;
+            if (currentProgress > 85) currentProgress = 85;
             
             let statusText = "Lade Webseite...";
-            if (currentProgress > 20) statusText = "Extrahiere Artikel...";
-            if (currentProgress > 40) statusText = "Bereinige Text...";
-            if (currentProgress > 60) statusText = "Erstelle Zusammenfassung...";
-            if (currentProgress > 80) statusText = "Übersetze...";
+            if (currentProgress > 15) statusText = "Extrahiere Artikel...";
+            if (currentProgress > 30) statusText = "Bereinige Text...";
+            if (currentProgress > 50) statusText = "Erstelle Zusammenfassung...";
+            if (currentProgress > 70) statusText = "Übersetze Text...";
             
             updateProgress(currentProgress, statusText);
         }
-    }, 500);
+    }, 800);
 
     try {
-        // API Aufruf
         const response = await fetch("/api/summarize", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -350,7 +456,7 @@ async function processArticle() {
         });
 
         clearInterval(progressInterval);
-        updateProgress(100, "Fertig!");
+        updateProgress(100, "✅ Fertig!");
 
         const data = await response.json();
 
@@ -358,14 +464,17 @@ async function processArticle() {
             throw new Error(data.error || data.details || "Unbekannter Fehler");
         }
 
-        // Kurz warten damit "Fertig!" sichtbar ist
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Warte kurz für "Fertig!" Anzeige
+        await new Promise(resolve => setTimeout(resolve, 600));
 
-        // Erfolgreiche Antwort anzeigen
+        // Erfolg anzeigen
         progressContainer.classList.remove("show");
         resultContainer.classList.add("show");
         
-        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Smooth scroll zum Ergebnis
+        setTimeout(() => {
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
         
         const resultTitle = document.getElementById("resultTitle");
         const resultSummary = document.getElementById("resultSummary");
@@ -382,9 +491,10 @@ async function processArticle() {
         };
         
         resultMeta.innerHTML = `
-            <strong>Sprache:</strong> ${languageNames[data.language] || data.language}<br>
-            <strong>Original-Länge:</strong> ${data.originalLength?.toLocaleString() || 'N/A'} Zeichen<br>
-            <strong>Zusammenfassung:</strong> ${data.summaryLength?.toLocaleString() || 'N/A'} Zeichen
+            <strong>📊 Statistik:</strong><br>
+            Sprache: ${languageNames[data.language] || data.language}<br>
+            Original: ${data.originalLength?.toLocaleString()} Zeichen<br>
+            Zusammenfassung: ${data.translatedLength?.toLocaleString()} Zeichen
         `;
 
     } catch (error) {
@@ -392,7 +502,6 @@ async function processArticle() {
         progressContainer.classList.remove("show");
         showError(error.message);
     } finally {
-        // Button wiederherstellen
         processBtn.disabled = false;
         processBtn.textContent = '✨ Zusammenfassen & Übersetzen';
     }
@@ -409,21 +518,27 @@ function showError(message) {
     resultSummary.textContent = message;
     resultMeta.innerHTML = `
         <strong>💡 Tipps:</strong><br>
-        • Stelle sicher, dass die URL korrekt ist<br>
-        • Teste mit einem Wikipedia-Artikel<br>
-        • Bei großen Artikeln kann die Verarbeitung 30-60 Sekunden dauern<br>
-        • Hugging Face Models müssen beim ersten Mal laden (kann 20-30 Sek. dauern)
+        • Überprüfe die URL<br>
+        • Teste mit Wikipedia<br>
+        • Warte bei großen Artikeln 30-60 Sek.<br>
+        • Versuche es bei Fehlern erneut
     `;
     
-    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => {
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
 }
 
 // Enter-Taste Support
 document.getElementById("urlInput").addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
+        event.preventDefault();
         processArticle();
     }
 });
+
+// Prevent zoom on iOS when focusing inputs
+document.addEventListener('touchstart', function() {}, {passive: true});
 </script>
 
 </body>
