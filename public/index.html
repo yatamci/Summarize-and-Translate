@@ -80,23 +80,23 @@ async function processArticle() {
         return;
     }
 
-    resultDiv.textContent = "Artikel wird verarbeitet...";
+    resultDiv.textContent = "Artikel wird verarbeitet…";
 
-    // Backend-Endpunkt (Beispiel)
     const response = await fetch("/api/summarize", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, language })
-});
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, language })
+    });
 
-const data = await response.json();
+    const data = await response.json();
 
-if (!response.ok) {
-    resultDiv.textContent = data.details || "Unbekannter Fehler";
-    return;
-}
+    if (!response.ok) {
+        resultDiv.textContent =
+            data.details || data.error || "Unbekannter Fehler";
+        return;
+    }
 
-resultDiv.textContent = data.summary;
+    resultDiv.textContent = data.summary;
 }
 </script>
 
