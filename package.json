@@ -1,0 +1,14 @@
+{
+  "name": "article-summarizer-free",
+  "version": "2.0.0",
+  "description": "100% kostenloser KI-Artikel-Zusammenfasser mit Hugging Face & LibreTranslate",
+  "type": "module",
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "jsdom": "^24.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
