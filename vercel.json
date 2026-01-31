@@ -1,10 +1,4 @@
 {
-  "functions": {
-    "api/summarize.js": {
-      "memory": 3008,
-      "maxDuration": 60
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
