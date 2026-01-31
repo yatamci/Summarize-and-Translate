@@ -7,7 +7,7 @@
   },
   "headers": [
     {
-      "source": "/public/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -20,6 +20,12 @@
     {
       "source": "/",
       "destination": "/public/index.html"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/public/index.html"
     }
   ]
 }
