@@ -1,16 +1,12 @@
 // api/summarize.js
-// Optimierte Version mit besserer Zusammenfassung und zuverlässiger Übersetzung
-
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 
-/* -------------------- Konfiguration -------------------- */
-const MAX_ARTICLE_CHARS = 150000;
-const FETCH_TIMEOUT_MS = 20000;
-const CHUNK_SIZE = 2000; // Kleinere Chunks für bessere Qualität
+const MAX_ARTICLE_CHARS = 200000;
+const TIMEOUT = 25000;
 
-// Kostenlose APIs
-const SUMMARIZATION_MODEL = "facebook/bart-large-cnn";
+// Bessere Modelle
+const SUMMARIZATION_MODEL = "sshleifer/distilbart-cnn-12-6"; // Schneller & zuverlässiger
 const TRANSLATION_MODELS = {
   de: "Helsinki-NLP/opus-mt-en-de",
   es: "Helsinki-NLP/opus-mt-en-es",
@@ -26,337 +22,252 @@ const TRANSLATION_MODELS = {
   da: "Helsinki-NLP/opus-mt-en-da"
 };
 
-const LANGUAGE_NAMES = {
-  de: "Deutsch", en: "English", es: "Español", fr: "Français",
-  it: "Italiano", nl: "Nederlands", da: "Dansk", no: "Norsk",
-  sv: "Svenska", fi: "Suomi", pl: "Polski", cs: "Čeština", ru: "Русский"
-};
-
-/* -------------------- Hilfsfunktionen -------------------- */
-
-// Text gründlich bereinigen
+// Text bereinigen
 function cleanText(text) {
   if (!text) return "";
-  
-  let cleaned = text;
-  
-  // Entferne alle Zitationen und Referenzen
-  cleaned = cleaned.replace(/\[\s*\d+(?:[,\s\-–—]*\d+)*\s*\]/g, "");
-  cleaned = cleaned.replace(/\[\s*[a-zA-Z]+\s*\]/g, "");
-  cleaned = cleaned.replace(/\[\s*cite[^\]]*\]/gi, "");
-  cleaned = cleaned.replace(/\(siehe[^)]*\)/gi, "");
-  cleaned = cleaned.replace(/\(vgl\.[^)]*\)/gi, "");
-  cleaned = cleaned.replace(/\[Bearbeiten\s*\|\s*Quelltext bearbeiten\]/gi, "");
-  cleaned = cleaned.replace(/\[edit\]/gi, "");
-  cleaned = cleaned.replace(/\^/g, "");
-  cleaned = cleaned.replace(/Main article:\s*[^\n]*/gi, "");
-  
-  // Mehrfache Leerzeichen und Zeilenumbrüche
-  cleaned = cleaned.replace(/\s+/g, " ");
-  cleaned = cleaned.replace(/\n{3,}/g, "\n\n");
-  cleaned = cleaned.replace(/\s+([.,!?;:])/g, "$1");
-  
-  return cleaned.trim();
+  return text
+    .replace(/\[\s*\d+(?:[,\s\-–—]*\d+)*\s*\]/g, "")
+    .replace(/\[\s*[a-zA-Z]+\s*\]/g, "")
+    .replace(/\[\s*cite[^\]]*\]/gi, "")
+    .replace(/\(siehe[^)]*\)/gi, "")
+    .replace(/\[Bearbeiten[^\]]*\]/gi, "")
+    .replace(/\[edit\]/gi, "")
+    .replace(/\^/g, "")
+    .replace(/Main article:\s*[^\n]*/gi, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,!?;:])/g, "$1")
+    .trim();
 }
 
-// Intelligentes Chunking an Absatzgrenzen
-function splitIntoChunks(text, maxLength = CHUNK_SIZE) {
-  if (!text || text.length <= maxLength) {
-    return [text];
-  }
-  
-  // Splitte zuerst in Absätze
-  const paragraphs = text.split(/\n\n+/);
+// Intelligentes Chunking
+function chunkText(text, maxSize = 1500) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
   const chunks = [];
-  let currentChunk = "";
+  let current = "";
   
-  for (const para of paragraphs) {
-    // Wenn Absatz allein zu groß, splitte in Sätze
-    if (para.length > maxLength) {
-      if (currentChunk) {
-        chunks.push(currentChunk.trim());
-        currentChunk = "";
-      }
-      
-      const sentences = para.match(/[^.!?]+[.!?]+/g) || [para];
-      for (const sent of sentences) {
-        if ((currentChunk + sent).length <= maxLength) {
-          currentChunk += sent;
-        } else {
-          if (currentChunk) chunks.push(currentChunk.trim());
-          currentChunk = sent;
-        }
-      }
+  for (const sentence of sentences) {
+    if ((current + sentence).length > maxSize) {
+      if (current) chunks.push(current.trim());
+      current = sentence;
     } else {
-      // Normaler Absatz
-      if ((currentChunk + "\n\n" + para).length <= maxLength) {
-        currentChunk += (currentChunk ? "\n\n" : "") + para;
-      } else {
-        if (currentChunk) chunks.push(currentChunk.trim());
-        currentChunk = para;
-      }
+      current += sentence;
     }
   }
+  if (current) chunks.push(current.trim());
   
-  if (currentChunk) chunks.push(currentChunk.trim());
-  
-  return chunks.filter(c => c.length > 0);
+  return chunks;
 }
 
 // Fetch mit Timeout
-async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT_MS) {
+async function fetchWithTimeout(url, options, timeout = TIMEOUT) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+  const id = setTimeout(() => controller.abort(), timeout);
   try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return res;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
   }
 }
 
-// Hugging Face API mit verbesserter Fehlerbehandlung
-async function callHuggingFace(model, inputs, params = {}, retries = 3) {
+// Hugging Face API Call
+async function callHF(model, text, maxRetries = 3) {
   const url = `https://api-inference.huggingface.co/models/${model}`;
   
-  for (let attempt = 0; attempt < retries; attempt++) {
+  for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetchWithTimeout(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          inputs: inputs,
-          options: { wait_for_model: true, use_cache: false },
+          inputs: text,
+          options: { wait_for_model: true },
           parameters: {
-            max_length: params.max_length || 512,
-            min_length: params.min_length || 100,
-            do_sample: false,
-            early_stopping: true,
-            no_repeat_ngram_size: 3,
-            ...params
+            max_length: 512,
+            min_length: 50,
+            do_sample: false
           }
         })
-      }, 90000); // Längerer Timeout
+      }, 90000);
+
+      if (response.status === 503) {
+        console.log(`Model lädt... Warte 30s (${i+1}/${maxRetries})`);
+        await new Promise(r => setTimeout(r, 30000));
+        continue;
+      }
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        
-        if (response.status === 503 && errorText.includes("loading")) {
-          console.log(`⏳ Model lädt... Warte 25 Sekunden (${attempt + 1}/${retries})`);
-          await new Promise(resolve => setTimeout(resolve, 25000));
-          continue;
-        }
-        
-        throw new Error(`HF API Error (${response.status}): ${errorText}`);
+        throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
       
-      // Extrahiere Text
+      // Extrahiere Text aus Response
       if (Array.isArray(data) && data[0]) {
         return data[0].summary_text || data[0].translation_text || data[0].generated_text || "";
       }
-      if (data.summary_text) return data.summary_text;
-      if (data.translation_text) return data.translation_text;
-      if (data.generated_text) return data.generated_text;
+      return data.summary_text || data.translation_text || data.generated_text || "";
       
-      return "";
-      
-    } catch (error) {
-      if (attempt === retries - 1) throw error;
-      console.log(`❌ Versuch ${attempt + 1} fehlgeschlagen, versuche erneut...`);
-      await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (err) {
+      if (i === maxRetries - 1) throw err;
+      console.log(`Retry ${i+1}...`);
+      await new Promise(r => setTimeout(r, 5000));
     }
   }
-  
-  throw new Error("Max retries exceeded");
 }
 
-// VERBESSERTE Zusammenfassung - Verarbeitet ALLE Chunks vollständig
+// NEUE Strategie: Extraktive Zusammenfassung (nimm wichtigste Sätze)
+function extractiveSummary(text, maxSentences = 15) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  
+  // Bewerte Sätze nach Wichtigkeit (einfache Heuristik)
+  const scored = sentences.map((sent, idx) => {
+    let score = 0;
+    
+    // Erste Sätze sind wichtiger
+    if (idx < 5) score += 3;
+    
+    // Längere Sätze (nicht zu kurz, nicht zu lang)
+    const len = sent.trim().length;
+    if (len > 50 && len < 200) score += 2;
+    
+    // Enthält Schlüsselwörter
+    const keywords = ['ist', 'sind', 'wird', 'wurde', 'kann', 'hat', 'haben', 
+                      'wichtig', 'bedeutend', 'haupt', 'erste', 'größte'];
+    keywords.forEach(kw => {
+      if (sent.toLowerCase().includes(kw)) score += 1;
+    });
+    
+    return { text: sent.trim(), score };
+  });
+  
+  // Sortiere nach Score, nimm Top N
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxSentences)
+    .map(s => s.text)
+    .join(" ");
+}
+
+// Zusammenfassung mit Hybrid-Ansatz
 async function summarizeText(text) {
   console.log(`📝 Starte Zusammenfassung (${text.length} Zeichen)`);
   
-  const chunks = splitIntoChunks(text, CHUNK_SIZE);
-  console.log(`📊 Aufgeteilt in ${chunks.length} Chunks`);
+  // Strategie 1: Für kurze Texte - direkt mit HF
+  if (text.length < 3000) {
+    try {
+      const result = await callHF(SUMMARIZATION_MODEL, text);
+      if (result && result.length > 100) {
+        console.log(`✅ Direkte Zusammenfassung: ${result.length} Zeichen`);
+        return result;
+      }
+    } catch (err) {
+      console.log("⚠️ HF fehlgeschlagen, nutze extraktiv");
+    }
+  }
   
-  const summaries = [];
+  // Strategie 2: Für lange Texte - erst extraktiv verkürzen, dann HF
+  console.log("📊 Nutze Hybrid-Ansatz");
   
-  // WICHTIG: Verarbeite ALLE Chunks, nicht nur die ersten
+  // Schritt 1: Extraktive Zusammenfassung (wichtigste Sätze)
+  const extractive = extractiveSummary(text, 20);
+  console.log(`✅ Extraktiv: ${extractive.length} Zeichen`);
+  
+  // Schritt 2: Diese verkürzte Version durch HF jagen
+  try {
+    const abstractive = await callHF(SUMMARIZATION_MODEL, extractive);
+    if (abstractive && abstractive.length > 50) {
+      console.log(`✅ Abstraktiv: ${abstractive.length} Zeichen`);
+      return abstractive;
+    }
+  } catch (err) {
+    console.log("⚠️ Abstraktiv fehlgeschlagen, nutze extraktiv");
+  }
+  
+  // Fallback: Gib extraktive Zusammenfassung zurück
+  return extractive;
+}
+
+// Verbesserte Übersetzung
+async function translateText(text, lang) {
+  if (lang === "en" || !text) return text;
+  
+  console.log(`🌍 Übersetze nach ${lang}`);
+  
+  const model = TRANSLATION_MODELS[lang];
+  if (!model) {
+    console.log("⚠️ Kein HF Model, nutze LibreTranslate");
+    return await translateLibre(text, lang);
+  }
+  
+  // Chunk-basierte Übersetzung
+  const chunks = chunkText(text, 800);
+  console.log(`📊 ${chunks.length} Übersetzungs-Chunks`);
+  
+  const translated = [];
+  
   for (let i = 0; i < chunks.length; i++) {
-    console.log(`🔄 Verarbeite Chunk ${i + 1}/${chunks.length} (${chunks[i].length} Zeichen)`);
-    
     try {
-      const summary = await callHuggingFace(SUMMARIZATION_MODEL, chunks[i], {
-        max_length: 300,
-        min_length: 80
-      });
-      
-      if (summary && summary.length > 20) {
-        summaries.push(summary);
-        console.log(`✅ Chunk ${i + 1} zusammengefasst: ${summary.length} Zeichen`);
+      const result = await callHF(model, chunks[i]);
+      if (result) {
+        translated.push(result);
+        console.log(`✅ Chunk ${i+1}/${chunks.length} übersetzt`);
+      } else {
+        // Fallback zu LibreTranslate für diesen Chunk
+        const libre = await translateLibre(chunks[i], lang);
+        translated.push(libre);
       }
-    } catch (error) {
-      console.error(`❌ Fehler bei Chunk ${i + 1}:`, error.message);
-      // Fallback: Nimm wichtigste Sätze des Chunks
-      const sentences = chunks[i].split(/[.!?]+/).filter(s => s.trim().length > 20);
-      const fallback = sentences.slice(0, 4).join(". ") + ".";
-      summaries.push(fallback);
+    } catch (err) {
+      console.log(`❌ Chunk ${i+1} HF fehlgeschlagen, nutze LibreTranslate`);
+      const libre = await translateLibre(chunks[i], lang);
+      translated.push(libre);
+    }
+    
+    // Kleine Pause zwischen Chunks
+    if (i < chunks.length - 1) {
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
   
-  console.log(`✅ ${summaries.length} Teil-Zusammenfassungen erstellt`);
-  
-  // Kombiniere alle Zusammenfassungen zu einem Text
-  let combined = summaries.join(" ");
-  
-  // Falls immer noch zu lang, nochmal zusammenfassen
-  if (combined.length > 4000 && summaries.length > 3) {
-    console.log("🔄 Kombiniere und komprimiere Zusammenfassungen...");
-    try {
-      combined = await callHuggingFace(SUMMARIZATION_MODEL, combined, {
-        max_length: 600,
-        min_length: 200
-      });
-      console.log(`✅ Finale Zusammenfassung: ${combined.length} Zeichen`);
-    } catch (error) {
-      console.log("⚠️ Kombinierung fehlgeschlagen, verwende kombinierte Summaries");
-    }
-  }
-  
-  return combined;
+  return translated.join(" ");
 }
 
-// VERBESSERTE Übersetzung - Chunk-basiert für längere Texte
-async function translateText(text, targetLanguage) {
-  if (targetLanguage === "en" || !text) {
-    return text;
-  }
-  
-  console.log(`🌍 Übersetze nach ${LANGUAGE_NAMES[targetLanguage]} (${text.length} Zeichen)`);
-  
-  const translationModel = TRANSLATION_MODELS[targetLanguage];
-  
-  if (!translationModel) {
-    console.log(`⚠️ Kein HF Model für ${targetLanguage}, nutze LibreTranslate`);
-    return await translateWithLibreTranslate(text, targetLanguage);
-  }
-  
+// LibreTranslate Fallback
+async function translateLibre(text, lang) {
   try {
-    // Teile in kleinere Chunks (1000 Zeichen) für bessere Übersetzung
-    const chunks = splitIntoChunks(text, 1000);
-    console.log(`📊 Übersetzung in ${chunks.length} Chunks`);
+    const res = await fetchWithTimeout("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: text,
+        source: "en",
+        target: lang,
+        format: "text"
+      })
+    }, 30000);
     
-    const translations = [];
-    
-    for (let i = 0; i < chunks.length; i++) {
-      console.log(`🔄 Übersetze Chunk ${i + 1}/${chunks.length}`);
-      
-      try {
-        const translated = await callHuggingFace(translationModel, chunks[i], {
-          max_length: 1500
-        });
-        
-        if (translated && translated.length > 0) {
-          translations.push(translated);
-          console.log(`✅ Chunk ${i + 1} übersetzt`);
-        } else {
-          // Fallback für diesen Chunk
-          const fallbackTranslation = await translateWithLibreTranslate(chunks[i], targetLanguage);
-          translations.push(fallbackTranslation);
-        }
-      } catch (error) {
-        console.error(`❌ Übersetzungs-Fehler Chunk ${i + 1}:`, error.message);
-        // Fallback für diesen Chunk
-        const fallbackTranslation = await translateWithLibreTranslate(chunks[i], targetLanguage);
-        translations.push(fallbackTranslation);
-      }
-    }
-    
-    const result = translations.join(" ");
-    console.log(`✅ Übersetzung abgeschlossen: ${result.length} Zeichen`);
-    return result;
-    
-  } catch (error) {
-    console.error("❌ Gesamt-Übersetzung fehlgeschlagen:", error.message);
-    return await translateWithLibreTranslate(text, targetLanguage);
-  }
-}
-
-// LibreTranslate Fallback mit Chunk-Support
-async function translateWithLibreTranslate(text, targetLanguage) {
-  console.log("🔄 LibreTranslate Fallback aktiviert");
-  
-  try {
-    // LibreTranslate hat auch Limits, also chunken wir
-    if (text.length > 5000) {
-      const chunks = splitIntoChunks(text, 4000);
-      const translations = [];
-      
-      for (const chunk of chunks) {
-        const response = await fetchWithTimeout("https://libretranslate.com/translate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            q: chunk,
-            source: "en",
-            target: targetLanguage,
-            format: "text"
-          })
-        }, 30000);
-
-        if (response.ok) {
-          const data = await response.json();
-          translations.push(data.translatedText || chunk);
-        } else {
-          translations.push(chunk);
-        }
-        
-        // Kleine Pause zwischen Requests
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-      return translations.join(" ");
-    } else {
-      const response = await fetchWithTimeout("https://libretranslate.com/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          q: text,
-          source: "en",
-          target: targetLanguage,
-          format: "text"
-        })
-      }, 30000);
-
-      if (!response.ok) {
-        throw new Error(`LibreTranslate Error: ${response.status}`);
-      }
-
-      const data = await response.json();
+    if (res.ok) {
+      const data = await res.json();
       return data.translatedText || text;
     }
-  } catch (error) {
-    console.error("❌ LibreTranslate fehlgeschlagen:", error.message);
-    return text;
+  } catch (err) {
+    console.log("LibreTranslate Fehler:", err.message);
   }
+  return text;
 }
 
-/* -------------------- Haupt-Handler -------------------- */
+// Haupt-Handler
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Nur POST erlaubt" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Nur POST" });
 
-  console.log("🚀 === NEUE ANFRAGE ===");
+  console.log("🚀 === START ===");
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
@@ -366,75 +277,68 @@ export default async function handler(req, res) {
     if (!language) return res.status(400).json({ error: "Sprache fehlt" });
 
     console.log(`📝 URL: ${url}`);
-    console.log(`🌍 Zielsprache: ${language}`);
+    console.log(`🌍 Sprache: ${language}`);
 
     // 1) Webseite laden
-    const pageResponse = await fetchWithTimeout(url, {
+    const pageRes = await fetchWithTimeout(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
       }
     });
 
-    if (!pageResponse.ok) {
-      return res.status(400).json({ error: `Webseite antwortet mit ${pageResponse.status}` });
+    if (!pageRes.ok) {
+      return res.status(400).json({ error: `Status ${pageRes.status}` });
     }
 
-    const html = await pageResponse.text();
-    console.log(`✅ HTML geladen: ${html.length} Zeichen`);
+    const html = await pageRes.text();
+    console.log(`✅ HTML: ${html.length} Zeichen`);
 
     // 2) Artikel extrahieren
     const dom = new JSDOM(html, { url });
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
 
-    if (!article || !article.textContent) {
-      return res.status(400).json({ error: "Kein Artikel-Inhalt gefunden" });
+    if (!article?.textContent) {
+      return res.status(400).json({ error: "Kein Artikel gefunden" });
     }
 
     console.log(`📄 Artikel: "${article.title}" (${article.textContent.length} Zeichen)`);
 
-    // 3) Text bereinigen
-    let cleanedText = cleanText(article.textContent);
-    
-    if (cleanedText.length > MAX_ARTICLE_CHARS) {
-      console.log(`⚠️ Artikel zu lang, kürze auf ${MAX_ARTICLE_CHARS}`);
-      cleanedText = cleanedText.substring(0, MAX_ARTICLE_CHARS);
+    // 3) Bereinigen
+    let cleaned = cleanText(article.textContent);
+    if (cleaned.length > MAX_ARTICLE_CHARS) {
+      cleaned = cleaned.substring(0, MAX_ARTICLE_CHARS);
     }
+    console.log(`🧹 Bereinigt: ${cleaned.length} Zeichen`);
 
-    console.log(`🧹 Text bereinigt: ${cleanedText.length} Zeichen`);
-
-    // 4) Zusammenfassung erstellen
-    const summary = await summarizeText(cleanedText);
-    
-    if (!summary || summary.length < 50) {
-      return res.status(500).json({ error: "Zusammenfassung zu kurz oder leer" });
+    // 4) Zusammenfassen
+    const summary = await summarizeText(cleaned);
+    if (!summary || summary.length < 30) {
+      return res.status(500).json({ error: "Zusammenfassung fehlgeschlagen" });
     }
-
     console.log(`✅ Zusammenfassung: ${summary.length} Zeichen`);
 
     // 5) Übersetzen
-    let finalText = summary;
+    let final = summary;
     if (language !== "en") {
-      finalText = await translateText(summary, language);
-      console.log(`✅ Übersetzt: ${finalText.length} Zeichen`);
+      final = await translateText(summary, language);
+      console.log(`✅ Übersetzt: ${final.length} Zeichen`);
     }
 
-    // 6) Antwort
-    console.log("🎉 === ERFOLGREICH ===");
-    
+    console.log("🎉 === ERFOLG ===");
+
     return res.status(200).json({
       title: article.title || "Artikel",
-      summary: finalText,
+      summary: final,
       language: language,
       originalLength: article.textContent.length,
-      cleanedLength: cleanedText.length,
+      cleanedLength: cleaned.length,
       summaryLength: summary.length,
-      translatedLength: finalText.length
+      translatedLength: final.length
     });
 
   } catch (error) {
-    console.error("❌ === FEHLER ===", error);
+    console.error("❌ FEHLER:", error);
     return res.status(500).json({ 
       error: "Interner Fehler",
       details: error.message 
