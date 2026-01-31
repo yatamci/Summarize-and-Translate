@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Artikel-Zusammenfassung - Kostenlos</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Artikel-Zusammenfassung v3.0 - Kostenlos</title>
     <style>
         * {
             margin: 0;
@@ -31,37 +34,65 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 5px;
-            font-size: 24px;
-            line-height: 1.3;
+        .header {
+            margin-bottom: 20px;
         }
 
-        .subtitle {
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 13px;
-            line-height: 1.4;
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-size: 24px;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .emoji {
+            font-size: 28px;
         }
 
         .badge {
             display: inline-block;
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 12px;
             font-size: 11px;
             font-weight: 700;
-            margin-left: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .subtitle {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4ebf2 100%);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #0066cc;
+            border: 2px solid #b3d9e8;
+            line-height: 1.5;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
         }
 
         label {
             display: block;
             font-weight: 600;
-            color: #333;
+            color: #1a1a1a;
             margin-bottom: 8px;
             margin-top: 18px;
             font-size: 14px;
@@ -77,6 +108,7 @@
             background: #fff;
             appearance: none;
             -webkit-appearance: none;
+            color: #1a1a1a;
         }
 
         select {
@@ -159,7 +191,7 @@
         .result-container {
             margin-top: 25px;
             padding: 20px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: #f8f9fa;
             border-radius: 16px;
             border-left: 4px solid #667eea;
             display: none;
@@ -184,7 +216,7 @@
         .result-title {
             font-size: 18px;
             font-weight: 700;
-            color: #333;
+            color: #1a1a1a;
             margin-bottom: 14px;
             display: flex;
             align-items: center;
@@ -198,46 +230,30 @@
         }
 
         .result-summary {
-            color: #444;
+            color: #1a1a1a;
             line-height: 1.8;
             white-space: pre-wrap;
             word-wrap: break-word;
             font-size: 15px;
+            font-weight: 400;
         }
 
         .result-meta {
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 2px solid rgba(255,255,255,0.6);
+            border-top: 2px solid #dee2e6;
             font-size: 12px;
-            color: #666;
+            color: #555;
             line-height: 1.6;
         }
 
         .error {
-            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            background: #fee;
             border-left-color: #e74c3c;
         }
 
         .error .result-title::before {
             content: "❌";
-        }
-
-        .info-box {
-            background: linear-gradient(135deg, #e8f4f8 0%, #d4ebf2 100%);
-            padding: 14px;
-            border-radius: 12px;
-            margin-bottom: 18px;
-            font-size: 13px;
-            color: #0066cc;
-            border: 2px solid #b3d9e8;
-            line-height: 1.5;
-        }
-
-        .info-box strong {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 14px;
         }
 
         /* Mobile Optimierungen */
@@ -252,7 +268,11 @@
             }
             
             h1 {
-                font-size: 22px;
+                font-size: 20px;
+            }
+
+            .emoji {
+                font-size: 24px;
             }
 
             .subtitle {
@@ -260,15 +280,13 @@
             }
 
             .badge {
-                display: block;
-                margin: 8px 0 0 0;
-                width: fit-content;
+                margin-top: 8px;
                 font-size: 10px;
             }
 
             input, select {
                 padding: 12px 14px;
-                font-size: 16px; /* Verhindert Zoom auf iOS */
+                font-size: 16px;
             }
 
             button {
@@ -296,56 +314,23 @@
                 font-size: 28px;
             }
         }
-
-        /* Dark Mode Support */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            }
-
-            .container {
-                background: #0f3460;
-                color: #e0e0e0;
-            }
-
-            h1, label, .result-title {
-                color: #ffffff;
-            }
-
-            .subtitle, .result-meta {
-                color: #b0b0b0;
-            }
-
-            input, select {
-                background: #1a1a2e;
-                border-color: #2a2a4e;
-                color: #ffffff;
-            }
-
-            .result-summary {
-                color: #e0e0e0;
-            }
-
-            .info-box {
-                background: rgba(102, 126, 234, 0.2);
-                border-color: rgba(102, 126, 234, 0.4);
-                color: #9db4ff;
-            }
-        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>
-        📰 Artikel-Zusammenfassung
-        <span class="badge">100% Kostenlos</span>
-    </h1>
-    <p class="subtitle">KI-gestützte Zusammenfassungen in deiner Sprache - Powered by Hugging Face</p>
+    <div class="header">
+        <h1>
+            <span class="emoji">📰</span>
+            <span>Artikel-Zusammenfassung</span>
+            <span class="badge">100% Kostenlos</span>
+        </h1>
+        <p class="subtitle">KI-gestützte Zusammenfassungen in deiner Sprache - Powered by Hugging Face</p>
+    </div>
 
     <div class="info-box">
         <strong>💡 Hinweis:</strong>
-        Beim ersten Mal kann es 30-60 Sekunden dauern (KI-Modelle müssen laden). Nachfolgende Anfragen sind schneller!
+        Schnelle Version (3-8 Sekunden) - Extraktive Zusammenfassung ohne KI-Model-Loading
     </div>
 
     <label for="urlInput">🔗 Artikel-URL</label>
@@ -409,7 +394,6 @@ async function processArticle() {
     const progressContainer = document.getElementById("progressContainer");
     const processBtn = document.getElementById("processBtn");
 
-    // Validierung
     if (!url) {
         showError("Bitte gib eine gültige URL ein.");
         return;
@@ -422,31 +406,29 @@ async function processArticle() {
         return;
     }
 
-    // UI vorbereiten
     resultContainer.classList.remove("show");
     progressContainer.classList.add("show");
     resultContainer.classList.remove("error");
     processBtn.disabled = true;
     processBtn.textContent = "⏳ Verarbeite...";
 
-    // Fortschritt simulieren
     let currentProgress = 0;
     updateProgress(0, "Lade Webseite...");
     
     progressInterval = setInterval(() => {
         if (currentProgress < 85) {
-            currentProgress += Math.random() * 10;
+            currentProgress += Math.random() * 15;
             if (currentProgress > 85) currentProgress = 85;
             
             let statusText = "Lade Webseite...";
-            if (currentProgress > 15) statusText = "Extrahiere Artikel...";
-            if (currentProgress > 30) statusText = "Bereinige Text...";
-            if (currentProgress > 50) statusText = "Erstelle Zusammenfassung...";
-            if (currentProgress > 70) statusText = "Übersetze Text...";
+            if (currentProgress > 20) statusText = "Extrahiere Artikel...";
+            if (currentProgress > 40) statusText = "Bereinige Text...";
+            if (currentProgress > 60) statusText = "Erstelle Zusammenfassung...";
+            if (currentProgress > 75) statusText = "Übersetze Text...";
             
             updateProgress(currentProgress, statusText);
         }
-    }, 800);
+    }, 300);
 
     try {
         const response = await fetch("/api/summarize", {
@@ -464,14 +446,11 @@ async function processArticle() {
             throw new Error(data.error || data.details || "Unbekannter Fehler");
         }
 
-        // Warte kurz für "Fertig!" Anzeige
         await new Promise(resolve => setTimeout(resolve, 600));
 
-        // Erfolg anzeigen
         progressContainer.classList.remove("show");
         resultContainer.classList.add("show");
         
-        // Smooth scroll zum Ergebnis
         setTimeout(() => {
             resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
@@ -490,11 +469,13 @@ async function processArticle() {
             cs: "Čeština", ru: "Русский"
         };
         
+        const processTime = data.processingTime ? ` (${(data.processingTime / 1000).toFixed(1)}s)` : '';
+        
         resultMeta.innerHTML = `
             <strong>📊 Statistik:</strong><br>
             Sprache: ${languageNames[data.language] || data.language}<br>
             Original: ${data.originalLength?.toLocaleString()} Zeichen<br>
-            Zusammenfassung: ${data.translatedLength?.toLocaleString()} Zeichen
+            Zusammenfassung: ${data.translatedLength?.toLocaleString()} Zeichen${processTime}
         `;
 
     } catch (error) {
@@ -520,7 +501,7 @@ function showError(message) {
         <strong>💡 Tipps:</strong><br>
         • Überprüfe die URL<br>
         • Teste mit Wikipedia<br>
-        • Warte bei großen Artikeln 30-60 Sek.<br>
+        • Stelle sicher, dass die Seite öffentlich ist<br>
         • Versuche es bei Fehlern erneut
     `;
     
@@ -529,7 +510,6 @@ function showError(message) {
     }, 100);
 }
 
-// Enter-Taste Support
 document.getElementById("urlInput").addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
         event.preventDefault();
@@ -537,7 +517,6 @@ document.getElementById("urlInput").addEventListener("keypress", function(event)
     }
 });
 
-// Prevent zoom on iOS when focusing inputs
 document.addEventListener('touchstart', function() {}, {passive: true});
 </script>
 
