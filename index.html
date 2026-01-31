@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Artikel-Zusammenfassung - Kostenlos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            margin-top: 18px;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #fff;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 22px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e1e8ed;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px;
+            border-left: 4px solid #667eea;
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .result-title::before {
+            content: "📄";
+            font-size: 22px;
+        }
+
+        .result-summary {
+            color: #444;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 15px;
+        }
+
+        .result-meta {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid rgba(255,255,255,0.6);
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+            border-left-color: #e74c3c;
+        }
+
+        .error .result-title::before {
+            content: "❌";
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4ebf2 100%);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #0066cc;
+            border: 2px solid #b3d9e8;
+            line-height: 1.5;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        /* Mobile Optimierungen */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 16px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+
+            .subtitle {
+                font-size: 12px;
+            }
+
+            .badge {
+                display: block;
+                margin: 8px 0 0 0;
+                width: fit-content;
+                font-size: 10px;
+            }
+
+            input, select {
+                padding: 12px 14px;
+                font-size: 16px; /* Verhindert Zoom auf iOS */
+            }
+
+            button {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            .result-title {
+                font-size: 16px;
+            }
+
+            .result-summary {
+                font-size: 14px;
+            }
+        }
+
+        /* Landscape Tablet */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .container {
+                max-width: 700px;
+                padding: 35px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            }
+
+            .container {
+                background: #0f3460;
+                color: #e0e0e0;
+            }
+
+            h1, label, .result-title {
+                color: #ffffff;
+            }
+
+            .subtitle, .result-meta {
+                color: #b0b0b0;
+            }
+
+            input, select {
+                background: #1a1a2e;
+                border-color: #2a2a4e;
+                color: #ffffff;
+            }
+
+            .result-summary {
+                color: #e0e0e0;
+            }
+
+            .info-box {
+                background: rgba(102, 126, 234, 0.2);
+                border-color: rgba(102, 126, 234, 0.4);
+                color: #9db4ff;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>
+        📰 Artikel-Zusammenfassung
+        <span class="badge">100% Kostenlos</span>
+    </h1>
+    <p class="subtitle">KI-gestützte Zusammenfassungen in deiner Sprache - Powered by Hugging Face</p>
+
+    <div class="info-box">
+        <strong>💡 Hinweis:</strong>
+        Beim ersten Mal kann es 30-60 Sekunden dauern (KI-Modelle müssen laden). Nachfolgende Anfragen sind schneller!
+    </div>
+
+    <label for="urlInput">🔗 Artikel-URL</label>
+    <input 
+        type="url" 
+        id="urlInput" 
+        placeholder="https://de.wikipedia.org/wiki/..." 
+        autocomplete="off"
+    >
+
+    <label for="languageSelect">🌍 Zielsprache</label>
+    <select id="languageSelect">
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="it">🇮🇹 Italiano</option>
+        <option value="nl">🇳🇱 Nederlands</option>
+        <option value="da">🇩🇰 Dansk</option>
+        <option value="no">🇳🇴 Norsk</option>
+        <option value="sv">🇸🇪 Svenska</option>
+        <option value="fi">🇫🇮 Suomi</option>
+        <option value="pl">🇵🇱 Polski</option>
+        <option value="cs">🇨🇿 Čeština</option>
+        <option value="ru">🇷🇺 Русский</option>
+    </select>
+
+    <button id="processBtn" onclick="processArticle()">
+        ✨ Zusammenfassen & Übersetzen
+    </button>
+
+    <div id="progressContainer" class="progress-container">
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div id="progressText" class="progress-text">Initialisierung...</div>
+    </div>
+
+    <div id="resultContainer" class="result-container">
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-summary" id="resultSummary"></div>
+        <div class="result-meta" id="resultMeta"></div>
+    </div>
+</div>
+
+<script>
+let progressInterval;
+
+function updateProgress(percent, text) {
+    const progressFill = document.getElementById("progressFill");
+    const progressText = document.getElementById("progressText");
+    
+    progressFill.style.width = percent + "%";
+    progressText.textContent = text;
+}
+
+async function processArticle() {
+    const url = document.getElementById("urlInput").value.trim();
+    const language = document.getElementById("languageSelect").value;
+    const resultContainer = document.getElementById("resultContainer");
+    const progressContainer = document.getElementById("progressContainer");
+    const processBtn = document.getElementById("processBtn");
+
+    // Validierung
+    if (!url) {
+        showError("Bitte gib eine gültige URL ein.");
+        return;
+    }
+
+    try {
+        new URL(url);
+    } catch (e) {
+        showError("Die URL ist nicht gültig. Bitte überprüfe das Format.");
+        return;
+    }
+
+    // UI vorbereiten
+    resultContainer.classList.remove("show");
+    progressContainer.classList.add("show");
+    resultContainer.classList.remove("error");
+    processBtn.disabled = true;
+    processBtn.textContent = "⏳ Verarbeite...";
+
+    // Fortschritt simulieren
+    let currentProgress = 0;
+    updateProgress(0, "Lade Webseite...");
+    
+    progressInterval = setInterval(() => {
+        if (currentProgress < 85) {
+            currentProgress += Math.random() * 10;
+            if (currentProgress > 85) currentProgress = 85;
+            
+            let statusText = "Lade Webseite...";
+            if (currentProgress > 15) statusText = "Extrahiere Artikel...";
+            if (currentProgress > 30) statusText = "Bereinige Text...";
+            if (currentProgress > 50) statusText = "Erstelle Zusammenfassung...";
+            if (currentProgress > 70) statusText = "Übersetze Text...";
+            
+            updateProgress(currentProgress, statusText);
+        }
+    }, 800);
+
+    try {
+        const response = await fetch("/api/summarize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url, language })
+        });
+
+        clearInterval(progressInterval);
+        updateProgress(100, "✅ Fertig!");
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.details || "Unbekannter Fehler");
+        }
+
+        // Warte kurz für "Fertig!" Anzeige
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // Erfolg anzeigen
+        progressContainer.classList.remove("show");
+        resultContainer.classList.add("show");
+        
+        // Smooth scroll zum Ergebnis
+        setTimeout(() => {
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+        
+        const resultTitle = document.getElementById("resultTitle");
+        const resultSummary = document.getElementById("resultSummary");
+        const resultMeta = document.getElementById("resultMeta");
+        
+        resultTitle.textContent = data.title || "Zusammenfassung";
+        resultSummary.textContent = data.summary;
+        
+        const languageNames = {
+            de: "Deutsch", en: "English", es: "Español", fr: "Français",
+            it: "Italiano", nl: "Nederlands", da: "Dansk", no: "Norsk",
+            sv: "Svenska", fi: "Suomi", pl: "Polski", 
+            cs: "Čeština", ru: "Русский"
+        };
+        
+        resultMeta.innerHTML = `
+            <strong>📊 Statistik:</strong><br>
+            Sprache: ${languageNames[data.language] || data.language}<br>
+            Original: ${data.originalLength?.toLocaleString()} Zeichen<br>
+            Zusammenfassung: ${data.translatedLength?.toLocaleString()} Zeichen
+        `;
+
+    } catch (error) {
+        clearInterval(progressInterval);
+        progressContainer.classList.remove("show");
+        showError(error.message);
+    } finally {
+        processBtn.disabled = false;
+        processBtn.textContent = '✨ Zusammenfassen & Übersetzen';
+    }
+}
+
+function showError(message) {
+    const resultContainer = document.getElementById("resultContainer");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultSummary = document.getElementById("resultSummary");
+    const resultMeta = document.getElementById("resultMeta");
+
+    resultContainer.classList.add("show", "error");
+    resultTitle.textContent = "Fehler";
+    resultSummary.textContent = message;
+    resultMeta.innerHTML = `
+        <strong>💡 Tipps:</strong><br>
+        • Überprüfe die URL<br>
+        • Teste mit Wikipedia<br>
+        • Warte bei großen Artikeln 30-60 Sek.<br>
+        • Versuche es bei Fehlern erneut
+    `;
+    
+    setTimeout(() => {
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+// Enter-Taste Support
+document.getElementById("urlInput").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        processArticle();
+    }
+});
+
+// Prevent zoom on iOS when focusing inputs
+document.addEventListener('touchstart', function() {}, {passive: true});
+</script>
+
+</body>
+</html>
